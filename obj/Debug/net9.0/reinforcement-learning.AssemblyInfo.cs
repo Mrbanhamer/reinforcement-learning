@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("reinforcement-learning")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+33ee9f08da11f5c5d9bb0e7b5924763358747cbb")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5a05b68d7c3ca82ee9a8bb293e9a7bc84583ca6a")]
 [assembly: System.Reflection.AssemblyProductAttribute("reinforcement-learning")]
 [assembly: System.Reflection.AssemblyTitleAttribute("reinforcement-learning")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
