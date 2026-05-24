@@ -1,0 +1,6 @@
+C:\Users\leona\reinforcement-learning\obj\Release\net8.0\reinforcement-learning.csproj.AssemblyReference.cache
+C:\Users\leona\reinforcement-learning\obj\Release\net8.0\reinforcement-learning.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\leona\reinforcement-learning\obj\Release\net8.0\reinforcement-learning.AssemblyInfoInputs.cache
+C:\Users\leona\reinforcement-learning\obj\Release\net8.0\reinforcement-learning.AssemblyInfo.cs
+C:\Users\leona\reinforcement-learning\obj\Release\net8.0\reinforcement-learning.csproj.CoreCompileInputs.cache
+C:\Users\leona\reinforcement-learning\obj\Release\net8.0\reinforcement-learning.sourcelink.json

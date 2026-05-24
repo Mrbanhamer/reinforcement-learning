@@ -1,0 +1,80 @@
+﻿== MegaCrit.Sts2.Core.Combat.CombatState ==
+Property Allies : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property BadgeModels : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Models.BadgeModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property Creatures : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property CreaturesOnCurrentSide : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property CurrentSide : MegaCrit.Sts2.Core.Combat.CombatSide
+Property Encounter : MegaCrit.Sts2.Core.Models.EncounterModel
+Property Enemies : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property EscapedCreatures : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property HittableEnemies : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property Modifiers : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Models.ModifierModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property MultiplayerScalingModel : MegaCrit.Sts2.Core.Models.Singleton.MultiplayerScalingModel
+Property PlayerCreatures : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property Players : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Players.Player, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property RoundNumber : System.Int32
+Property RunState : MegaCrit.Sts2.Core.Runs.IRunState
+Method add_CreaturesChanged(Action`1 value) : System.Void
+Method AddCard(CardModel card, Player owner) : System.Void
+Method AddCreature(Creature creature) : System.Void
+Method AddPlayer(Player player) : System.Void
+Method CloneCard(CardModel mutableCard) : MegaCrit.Sts2.Core.Models.CardModel
+Method ContainsCard(CardModel card) : System.Boolean
+Method ContainsCreature(Creature creature) : System.Boolean
+Method ContainsMonster() : System.Boolean
+Method CreateCard(Player owner) : 
+Method CreateCard(CardModel canonicalCard, Player owner) : MegaCrit.Sts2.Core.Models.CardModel
+Method CreateCreature(MonsterModel monster, CombatSide side, String slot) : MegaCrit.Sts2.Core.Entities.Creatures.Creature
+Method CreatureEscaped(Creature creature) : System.Void
+Method get_Allies() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_BadgeModels() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Models.BadgeModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_Creatures() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_CreaturesOnCurrentSide() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_CurrentSide() : MegaCrit.Sts2.Core.Combat.CombatSide
+Method get_Encounter() : MegaCrit.Sts2.Core.Models.EncounterModel
+Method get_Enemies() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_EscapedCreatures() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_HittableEnemies() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_Modifiers() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Models.ModifierModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_MultiplayerScalingModel() : MegaCrit.Sts2.Core.Models.Singleton.MultiplayerScalingModel
+Method get_PlayerCreatures() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_Players() : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Players.Player, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method get_RoundNumber() : System.Int32
+Method get_RunState() : MegaCrit.Sts2.Core.Runs.IRunState
+Method GetCreature(Nullable`1 combatId) : MegaCrit.Sts2.Core.Entities.Creatures.Creature
+Method GetCreatureAsync(Nullable`1 combatId, Double timeoutSec) : System.Threading.Tasks.Task`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method GetCreaturesOnSide(CombatSide side) : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method GetOpponentsOf(Creature creature) : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method GetPlayer(UInt64 playerId) : MegaCrit.Sts2.Core.Entities.Players.Player
+Method GetTeammatesOf(Creature creature) : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method IsLiveCombat() : System.Boolean
+Method IterateHookListeners() : System.Collections.Generic.IEnumerable`1[[MegaCrit.Sts2.Core.Models.AbstractModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Method remove_CreaturesChanged(Action`1 value) : System.Void
+Method RemoveCard(CardModel card) : System.Void
+Method RemoveCreature(Creature creature, Boolean unattach) : System.Void
+Method set_CurrentSide(CombatSide value) : System.Void
+Method set_RoundNumber(Int32 value) : System.Void
+Method SetEnemyIndex(Creature creature, Int32 index) : System.Void
+Method SortEnemiesBySlotName() : System.Void
+
+== MegaCrit.Sts2.Core.Combat.ICombatState ==
+Property Allies : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property Creatures : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property CreaturesOnCurrentSide : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property CurrentSide : MegaCrit.Sts2.Core.Combat.CombatSide
+Property Encounter : MegaCrit.Sts2.Core.Models.EncounterModel
+Property Enemies : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property EscapedCreatures : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property HittableEnemies : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property Modifiers : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Models.ModifierModel, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property MultiplayerScalingModel : MegaCrit.Sts2.Core.Models.Singleton.MultiplayerScalingModel
+Property PlayerCreatures : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Creatures.Creature, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property Players : System.Collections.Generic.IReadOnlyList`1[[MegaCrit.Sts2.Core.Entities.Players.Player, sts2, Version=0.1.0.0, Culture=neutral, PublicKeyToken=null]]
+Property RoundNumber : System.Int32
+Property RunState : MegaCrit.Sts2.Core.Runs.IRunState
+Method add_CreaturesChanged(Action`1 value) : System.Void
+Method AddCard(CardModel card, Player owner) : System.Void
+Method AddCreature(Creature creature) : System.Void
+Method AddPlayer(Player player) : System.Void
+Method CloneCard(CardModel mutableCard) : MegaCrit.Sts2.Core.Models.CardModel
+Method ContainsCard(CardModel card) : System.Boolean
