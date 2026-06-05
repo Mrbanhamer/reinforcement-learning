@@ -1,0 +1,15 @@
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\bin\Debug\net10.0\tmp_inspect.exe
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\bin\Debug\net10.0\tmp_inspect.deps.json
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\bin\Debug\net10.0\tmp_inspect.runtimeconfig.json
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\bin\Debug\net10.0\tmp_inspect.dll
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\bin\Debug\net10.0\tmp_inspect.pdb
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.AssemblyInfoInputs.cache
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.AssemblyInfo.cs
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.csproj.CoreCompileInputs.cache
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.sourcelink.json
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.dll
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\refint\tmp_inspect.dll
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.pdb
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\tmp_inspect.genruntimeconfig.cache
+C:\Users\leona\reinforcement-learning\bridge\tmp_inspect\obj\Debug\net10.0\ref\tmp_inspect.dll
