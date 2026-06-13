@@ -15,30 +15,161 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Text.Json;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DefectAIBridge;
 
 [ModInitializer("OnModLoaded")]
 public static class MyMod {
-    private static readonly string StateFilePath = Path.Combine(OS.GetUserDataDir(), "sts2_state.json");
+    // Default paths (may be overridden at runtime to the mod folder)
+    private static string StateFilePath = Path.Combine(OS.GetUserDataDir(), "sts2_state.json");
     // Additional debug copy in Documents to make it easy to find while testing
-    private static readonly string DebugStateFilePath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "sts2_state_debug.json");
+    private static string DebugStateFilePath = Path.Combine(System.Environment.GetFolderPath(System.Environment.SpecialFolder.MyDocuments), "sts2_state_debug.json");
+
+    // Socket bridge state
+    private static readonly object SocketLock = new object();
+    private static TcpClient socketClient;
+    private static StreamWriter socketWriter;
+    private static CancellationTokenSource socketCts;
+    private static string socketMode = "test";
+    private const string SocketHost = "127.0.0.1";
+    private const int SocketPort = 12345;
+    private static readonly TimeSpan SocketReconnectDelay = TimeSpan.FromSeconds(2);
 
     public static void OnModLoaded() {
-        // Hook natively into the game's global combat lifecycle events if available,
-        // or register a hook listener. For basic telemetry updates, subscribe to action execution.
-        GD.Print($">>> AI BRIDGE LOADED: state file will be written to {StateFilePath}");
+        // Try to set the state file paths to the folder where this mod DLL resides
+        try {
+            string modFolder = null;
+            try { modFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location); } catch { }
+            if (string.IsNullOrEmpty(modFolder)) {
+                try { modFolder = AppDomain.CurrentDomain.BaseDirectory; } catch { }
+            }
+            if (!string.IsNullOrEmpty(modFolder)) {
+                StateFilePath = Path.Combine(modFolder, "sts2_state.json");
+                DebugStateFilePath = Path.Combine(modFolder, "sts2_state_debug.json");
+            }
 
+            GD.Print($">>> AI BRIDGE LOADED: state file will be written to {StateFilePath}");
+        } catch (Exception e) {
+            GD.Print($">>> AI BRIDGE: failed to set mod-folder paths, using defaults ({StateFilePath}) - {e.Message}");
+        }
+
+        // Start the socket bridge and subscribe to game action events when ready.
+        StartSocketBridge();
+        StartExecutorWatcher();
+    }
+
+    private static void StartSocketBridge() {
+        socketCts?.Cancel();
+        socketCts = new CancellationTokenSource();
+        Task.Run(async () => {
+            while (!socketCts.IsCancellationRequested) {
+                try {
+                    await ConnectAndHandshakeAsync(socketCts.Token);
+                    while (!socketCts.IsCancellationRequested && socketClient?.Connected == true) {
+                        await Task.Delay(1000, socketCts.Token).ContinueWith(_ => { });
+                    }
+                } catch (OperationCanceledException) {
+                    break;
+                } catch (Exception e) {
+                    GD.PrintErr($">>> AI BRIDGE: Socket bridge failed: {e.Message}");
+                }
+
+                if (socketCts.IsCancellationRequested) break;
+                CloseSocketConnection();
+                await Task.Delay(SocketReconnectDelay, socketCts.Token).ContinueWith(_ => { });
+            }
+        }, socketCts.Token);
+    }
+
+    private static async Task ConnectAndHandshakeAsync(CancellationToken cancellationToken) {
+        CloseSocketConnection();
+        var client = new TcpClient();
+        await client.ConnectAsync(SocketHost, SocketPort).WaitAsync(cancellationToken);
+        var stream = client.GetStream();
+        using (var reader = new StreamReader(stream, Encoding.UTF8, false, 4096, leaveOpen: true)) {
+            string modeLine = await reader.ReadLineAsync().WaitAsync(cancellationToken);
+            if (string.IsNullOrWhiteSpace(modeLine)) {
+                throw new InvalidOperationException("Socket handshake failed: empty mode string.");
+            }
+
+            var mode = modeLine.Trim().ToLowerInvariant();
+            if (mode != "training" && mode != "test") {
+                throw new InvalidOperationException($"Socket handshake failed: unsupported mode '{mode}'.");
+            }
+
+            ApplySocketMode(mode);
+            var writer = new StreamWriter(stream, Encoding.UTF8, 4096, leaveOpen: true) { NewLine = "\n", AutoFlush = true };
+            lock (SocketLock) {
+                socketClient = client;
+                socketWriter = writer;
+                socketMode = mode;
+            }
+
+            GD.Print($">>> AI BRIDGE: Connected to socket server at {SocketHost}:{SocketPort} with mode '{mode}'.");
+        }
+    }
+
+    private static void StartExecutorWatcher() {
+        Task.Run(async () => {
+            while (!socketCts?.IsCancellationRequested ?? false) {
+                if (TrySubscribeActionExecutor()) break;
+                await Task.Delay(1000, socketCts.Token).ContinueWith(_ => { });
+            }
+        });
+    }
+
+    private static bool TrySubscribeActionExecutor() {
         try {
             var executor = RunManager.Instance?.ActionExecutor;
-            if (executor != null) {
-                executor.AfterActionExecuted += OnGameActionExecuted;
-                GD.Print(">>> AI BRIDGE: subscribed to ActionExecutor.AfterActionExecuted");
-            } else {
-                GD.Print(">>> AI BRIDGE WARNING: ActionExecutor instance unavailable");
-            }
+            if (executor == null) return false;
+            executor.AfterActionExecuted += OnGameActionExecuted;
+            GD.Print(">>> AI BRIDGE: Subscribed to ActionExecutor.AfterActionExecuted.");
+            return true;
         } catch (Exception e) {
-            GD.Print(">>> AI BRIDGE ERROR: could not subscribe to action executor - " + e.Message);
+            GD.PrintErr($">>> AI BRIDGE: Executor subscribe failed - {e.Message}");
+            return false;
+        }
+    }
+
+    private static void ApplySocketMode(string mode) {
+        if (mode == "training") {
+            Engine.TimeScale = 10.0f;
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Minimized);
+            DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Disabled, 0);
+        } else {
+            Engine.TimeScale = 1.0f;
+            DisplayServer.WindowSetMode(DisplayServer.WindowMode.Windowed);
+            DisplayServer.WindowSetVsyncMode(DisplayServer.VSyncMode.Enabled, 0);
+        }
+
+        GD.Print($">>> AI BRIDGE: Applied socket mode '{mode}'. TimeScale={Engine.TimeScale}, VSync={(mode == "training" ? "disabled" : "enabled")}");
+    }
+
+    private static void CloseSocketConnection() {
+        lock (SocketLock) {
+            if (socketWriter != null) {
+                try { socketWriter.Dispose(); } catch { }
+                socketWriter = null;
+            }
+            if (socketClient != null) {
+                try { socketClient.Close(); } catch { }
+                socketClient = null;
+            }
+        }
+    }
+
+    private static void SendStateOverSocket(string json) {
+        lock (SocketLock) {
+            if (socketWriter == null) return;
+            try {
+                socketWriter.WriteLine(json);
+            } catch (Exception e) {
+                GD.PrintErr($">>> AI BRIDGE: Socket send failed - {e.Message}");
+                CloseSocketConnection();
+            }
         }
     }
 
@@ -61,113 +192,24 @@ public static class MyMod {
     }
 
     private static void WriteStateFile(string json) {
-        try {
-            File.WriteAllText(StateFilePath, json, Encoding.UTF8);
-            // Also write a debug copy to Documents so it's easy to locate while testing
-            try { File.WriteAllText(DebugStateFilePath, json, Encoding.UTF8); } catch { }
-            GD.Print($">>> AI BRIDGE: state file updated ({StateFilePath}) and debug copy ({DebugStateFilePath})");
-        } catch (Exception e) {
-            GD.Print(">>> AI BRIDGE ERROR: " + e.Message);
-        }
+        // Disabled: JSON file writing removed. This mod only handles socket transport now.
+        // Keep method as a no-op so other code that may call it compiles.
+        try { /* no-op */ } catch { }
     }
 
     /// <summary>
-    /// This core scraper loop can be safely called directly by your game loop hook handlers
-    /// whenever a PlayerCombatState instance updates its turn boundaries.
+    /// This module no longer performs JSON serialization. Callers that need to
+    /// send serialized state should call `SendSerializedState` below.
     /// </summary>
     public static void ProcessCombatTelemetry(PlayerCombatState stateInstance, CombatState combatState) {
-        if (stateInstance == null) return;
+        // No-op: telemetry serialization removed from socket bridge module.
+    }
 
-        try {
-            // 1. Core Resources
-            int currentEnergy = stateInstance.Energy;
-            int maxEnergy = stateInstance.MaxEnergy;
-
-            // 2. Extract Card Piles
-            List<string> handList = new List<string>();
-            if (stateInstance.Hand?.Cards != null) {
-                foreach (var card in stateInstance.Hand.Cards) {
-                    if (card != null) handList.Add($@"""{card.Id}""");
-                }
-            }
-
-            List<string> drawList = new List<string>();
-            if (stateInstance.DrawPile?.Cards != null) {
-                foreach (var card in stateInstance.DrawPile.Cards) {
-                    if (card != null) drawList.Add($@"""{card.Id}""");
-                }
-            }
-
-            List<string> discardList = new List<string>();
-            if (stateInstance.DiscardPile?.Cards != null) {
-                foreach (var card in stateInstance.DiscardPile.Cards) {
-                    if (card != null) discardList.Add($@"""{card.Id}""");
-                }
-            }
-
-            // 3. Scan for Osty (Pets list)
-            int ostyHp = -1;
-            int ostyMaxHp = -1;
-            if (stateInstance.Pets != null && stateInstance.Pets.Count > 0) {
-                var osty = stateInstance.Pets[0];
-                if (osty != null) {
-                    ostyHp = osty.CurrentHp;
-                    ostyMaxHp = osty.MaxHp;
-                }
-            }
-
-            // 4. Extract Live Orbs
-            List<string> orbList = new List<string>();
-            int orbCount = stateInstance.OrbQueue?.Orbs?.Count ?? 0;
-            int orbCapacity = stateInstance.OrbQueue?.Capacity ?? 0;
-
-            if (stateInstance.OrbQueue?.Orbs != null) {
-                foreach (var orb in stateInstance.OrbQueue.Orbs) {
-                    if (orb != null) orbList.Add($@"""{orb.Id}"""); 
-                }
-            }
-
-            // 5. Build Player Creature State
-            var playerCreature = combatState?.PlayerCreatures?.FirstOrDefault();
-            string playerCreatureJson = SerializeCreature(playerCreature);
-
-            // 6. Loop through Room Enemies to Scrape Health, Powers, and Intent
-            List<string> enemyJsonList = new List<string>();
-            var enemies = combatState?.Enemies;
-            if (enemies != null) {
-                foreach (var enemy in enemies) {
-                    if (enemy != null && enemy.IsAlive) {
-                        enemyJsonList.Add(SerializeCreature(enemy));
-                    }
-                }
-            }
-
-            // 7. Extract round number from combat state
-            int roundNumber = combatState?.RoundNumber ?? 0;
-
-            // 8. Flatten arrays to clean strings
-            string handJson = string.Join(",", handList);
-            string drawJson = string.Join(",", drawList);
-            string discardJson = string.Join(",", discardList);
-            string orbsJson = string.Join(",", orbList);
-            string enemiesJson = string.Join(",", enemyJsonList);
-
-            // 9. Serialize rewards and map state if available
-            string rewardsJson = SerializeRewards();
-            string mapJson = SerializeMapState();
-            string relicsJson = SerializeRelics();
-            string potionsJson = SerializePotions();
-            string restSiteOptionsJson = SerializeRestSiteOptions();
-
-            // 10. Assemble the Final JSON String using safe verbatim literals
-            string json = $@"{{""round"": {roundNumber}, ""energy"": {currentEnergy}, ""max_energy"": {maxEnergy}, ""osty_hp"": {ostyHp}, ""osty_max_hp"": {ostyMaxHp}, ""orb_count"": {orbCount}, ""orb_capacity"": {orbCapacity}, ""orbs"": [{orbsJson}], ""hand"": [{handJson}], ""draw_pile"": [{drawJson}], ""discard_pile"": [{discardJson}], ""relics"": {relicsJson}, ""potions"": {potionsJson}, ""player_stats"": {playerCreatureJson}, ""enemies"": [{enemiesJson}], ""rewards"": {rewardsJson}, ""map"": {mapJson}, ""rest_site_options"": {restSiteOptionsJson}}}";
-
-            // 11. Write the state JSON file so external AI can read the latest game state
-            WriteStateFile(json);
-        }
-        catch (Exception ex) {
-            GD.Print($"> don't break logic loop error: {ex.Message}");
-        }
+    // Public API: send a pre-serialized string (JSON or other) over the socket bridge.
+    // Call this from other game code that performs serialization.
+    public static void SendSerializedState(string serializedState) {
+        if (string.IsNullOrEmpty(serializedState)) return;
+        SendStateOverSocket(serializedState);
     }
 
     private static string SerializeRelics() {

@@ -15,7 +15,7 @@
     "version": "1.0.0",
     "restore": {
       "projectUniqueName": "C:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj",
-      "projectName": "reinforcement-learning",
+      "projectName": "DefectAI",
       "projectPath": "C:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj",
       "packagesPath": "C:\\Users\\leona\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\leona\\reinforcement-learning\\bridge\\obj\\",

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj": {}
+    "c:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj": {}
   },
   "projects": {
-    "C:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj": {
+    "c:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj",
-        "projectName": "reinforcement-learning",
-        "projectPath": "C:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj",
+        "projectUniqueName": "c:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj",
+        "projectName": "DefectAI",
+        "projectPath": "c:\\Users\\leona\\reinforcement-learning\\bridge\\reinforcement-learning.csproj",
         "packagesPath": "C:\\Users\\leona\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\leona\\reinforcement-learning\\bridge\\obj\\",
+        "outputPath": "c:\\Users\\leona\\reinforcement-learning\\bridge\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

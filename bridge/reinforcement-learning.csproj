@@ -8,6 +8,7 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <AssemblyName>DefectAI</AssemblyName>
     <GameInstallPath>E:\SteamLibrary\steamapps\common\Slay the Spire 2</GameInstallPath>
   </PropertyGroup>
 
