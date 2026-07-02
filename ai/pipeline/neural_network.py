@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 
 class SlayTheSpireBrain(nn.Module):
-    def __init__(self, input_size=14, output_size=5):
+    def __init__(self, input_size=4, output_size=5):
         super(SlayTheSpireBrain, self).__init__()
 
         self.brain_pipeline = nn.Sequential(

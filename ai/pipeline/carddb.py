@@ -58,27 +58,166 @@ def boot_database(db_path: str | Path = DEFAULT_DB_PATH) -> dict[str, Any]:
     # If it does exist, read it from disk and hand it directly back
     with db_file.open("r", encoding="utf-8") as file:
         return json.load(file)
+    
+def flatten_game_state(clean_frame: dict) -> list[float]:
+    """
+    Takes your clean integer dictionary and squashes it into a 
+    flat, fixed-size list of numbers that PyTorch can understand.
+    """
+    vector = []
+    
+    # 1. Add raw numeric stats first (Safely extraction based on structural keys)
+    vector.append(float(clean_frame.get("round", 0)))
+    vector.append(float(clean_frame.get("energy", 0)))
+    
+    # Extract embedded numbers out of the nested player_stats dictionary
+    player_stats = clean_frame.get("player_stats", {})
+    vector.append(float(player_stats.get("hp", 0)))
+    vector.append(float(player_stats.get("block", 0)))
+    
+    # Extract maps numbers
+    map_data = clean_frame.get("map", {})
+    vector.append(float(map_data.get("act", 0))) # Integer ID of the current Act
+    vector.append(float(map_data.get("act_floor", 0)))
+
+    # 2. Process Hand Cards (Looking for "hand", fixed to 10 slots)
+    hand_cards = clean_frame.get("hand", [])
+    max_hand_slots = 10
+    for i in range(max_hand_slots):
+        if i < len(hand_cards):
+            card_dict = hand_cards[i]
+            # Safely grab the integer ID out of the nested dictionary
+            vector.append(float(card_dict.get("id", 0)))
+        else:
+            vector.append(0.0)
+
+    # 3. Process Enemies (Fixed to max 3 enemies on screen to keep length rigid)
+    enemies = clean_frame.get("enemies", [])
+    max_enemies = 3
+    for i in range(max_enemies):
+        if i < len(enemies):
+            enemy = enemies[i]
+            vector.append(float(enemy.get("id", 0)))
+            vector.append(float(enemy.get("hp", 0)))
+            vector.append(float(enemy.get("block", 0)))
+        else:
+            # Pad missing enemy slots with 3 zeros (ID, HP, Block)
+            vector.extend([0.0, 0.0, 0.0])
+            
+    return vector
 
 def encode_raw_state(db_obj: dict, game_state: dict) -> dict:
     """
-    Takes the whole raw game state, pulls out ONLY the lists that match our 
-    database namespaces, translates strings to integers via RAM, and ignores everything else.
+    Takes the whole raw game state and processes flat lists, 
+    nested player dictionaries, complex enemies, and the map structure.
     """
-    # Create a copy so we don't accidentally mutate the original socket frame data
     encoded_state = game_state.copy()
     
-    # Loop over the namespaces specified in your configs
-    for ns in DEFAULT_NAMESPACES:
-        # If the incoming game state has a matching key and it's a list (e.g. game_state["cards"] = [...])
+    # --- STEP 1: Process Flat and Structured Card Lists ---
+    card_namespaces = ["hand", "draw_pile", "discard_pile"]
+    for ns in card_namespaces:
         if ns in game_state and isinstance(game_state[ns], list):
-            encoded_list = []
-            
+            encoded_cards = []
             for item in game_state[ns]:
-                # Hand it off to your optimized lookup function
-                item_id = get_or_create_id(db_obj, ns, str(item))
-                encoded_list.append(item_id)
+                if isinstance(item, dict):  # NEW: Handle your C# dictionary structure!
+                    item_copy = item.copy()
+                    if "id" in item_copy:
+                        item_copy["id"] = get_or_create_id(db_obj, "cards", str(item_copy["id"]))
+                    encoded_cards.append(item_copy)
+                else:
+                    # Fallback for simple strings (like relics or potions if they remain strings)
+                    encoded_cards.append(get_or_create_id(db_obj, "cards", str(item)))
+            encoded_state[ns] = encoded_cards
+
+    # (Other lists like relics, potions, orbs can remain using your old string loop)
+    other_flat_namespaces = ["relics", "potions", "orbs"]
+    for ns in other_flat_namespaces:
+        if ns in game_state and isinstance(game_state[ns], list):
+            encoded_state[ns] = [
+                get_or_create_id(db_obj, ns, str(item)) for item in game_state[ns]
+            ]
+
+    # --- STEP 2: Process Nested Player Stats ---
+    if "player_stats" in game_state and isinstance(game_state["player_stats"], dict):
+        player = game_state["player_stats"].copy()
+        if "id" in player:
+            player["id"] = get_or_create_id(db_obj, "characters", player["id"])
             
-            # Replace the old raw text list with your clean integer list
-            encoded_state[ns] = encoded_list
+        if "powers" in player and isinstance(player["powers"], list):
+            encoded_powers = []
+            for p in player["powers"]:
+                if isinstance(p, dict) and "id" in p:
+                    p_copy = p.copy()
+                    p_copy["id"] = get_or_create_id(db_obj, "powers", p["id"])
+                    encoded_powers.append(p_copy)
+            player["powers"] = encoded_powers
+        encoded_state["player_stats"] = player
+
+    # --- STEP 3: Process Nested Enemy Lists ---
+    if "enemies" in game_state and isinstance(game_state["enemies"], list):
+        encoded_enemies = []
+        for enemy in game_state["enemies"]:
+            if isinstance(enemy, dict):
+                enemy_copy = enemy.copy()
+                if "id" in enemy_copy:
+                    enemy_copy["id"] = get_or_create_id(db_obj, "enemies", enemy_copy["id"])
+                
+                if "intent" in enemy_copy and isinstance(enemy_copy["intent"], dict):
+                    intent_copy = enemy_copy["intent"].copy()
+                    if "move_id" in intent_copy:
+                        intent_copy["move_id"] = get_or_create_id(db_obj, "enemy_moves", intent_copy["move_id"])
+                    enemy_copy["intent"] = intent_copy
+                
+                if "powers" in enemy_copy and isinstance(enemy_copy["powers"], list):
+                    encoded_enemy_powers = []
+                    for p in enemy_copy["powers"]:
+                        if isinstance(p, dict) and "id" in p:
+                            p_copy = p.copy()
+                            p_copy["id"] = get_or_create_id(db_obj, "powers", p["id"])
+                            encoded_enemy_powers.append(p_copy)
+                    enemy_copy["powers"] = encoded_enemy_powers
+                encoded_enemies.append(enemy_copy)
+        encoded_state["enemies"] = encoded_enemies
+
+    # --- STEP 4: Process the Map Structure ---
+    if "map" in game_state and isinstance(game_state["map"], dict):
+        map_copy = game_state["map"].copy()
+        if "act" in map_copy:
+            map_copy["act"] = get_or_create_id(db_obj, "acts", map_copy["act"])
+        if "current_room" in map_copy:
+            map_copy["current_room"] = get_or_create_id(db_obj, "encounters", map_copy["current_room"])
+            
+        # Optional: Clean up the point_type strings inside the room matrix if you track them
+        if "current_point" in map_copy and isinstance(map_copy["current_point"], dict):
+            cp = map_copy["current_point"].copy()
+            if "point_type" in cp:
+                cp["point_type"] = get_or_create_id(db_obj, "encounters", cp["point_type"])
+            map_copy["current_point"] = cp
+            
+        encoded_state["map"] = map_copy
             
     return encoded_state
+
+def generate_action_mask(clean_frame: dict) -> list[int]:
+    """
+    Returns a list of 11 integers (1 for legal, 0 for illegal).
+    Uses the game's native 'is_playable' property!
+    """
+    mask = [0] * 11
+    mask[10] = 1  # End Turn is always legal
+    
+    hand_cards = clean_frame.get("hand", [])
+    
+    for i in range(10):
+        if i < len(hand_cards):
+            card_dict = hand_cards[i]
+            
+            # Look directly at what the C# engine told us!
+            if card_dict.get("is_playable", False) == True:
+                mask[i] = 1  # Legal move!
+            else:
+                mask[i] = 0  # Illegal move according to game rules
+        else:
+            mask[i] = 0  # No card in this slot
+            
+    return mask
